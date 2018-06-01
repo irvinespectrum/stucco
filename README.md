@@ -1,6 +1,7 @@
 # git
 
 git remote add origin https://github.com/irvinespectrum/stucco.git
+
 git push -u origin master
 
 ## Quick start for Go App Engine Standard Environment
@@ -22,6 +23,7 @@ gcloud app deploy
 ## view application in the web browser
 
 gcloud app browse
+
 <https://counter-sa.appspot.com>
 
 ## production
