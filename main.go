@@ -1,27 +1,21 @@
-// Copyright 2018 Google Inc. All rights reserved.
-// Use of this source code is governed by the Apache 2.0
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"strings"
+	"time"
 
+	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	//	"google.golang.org/appengine"
-	//	"google.golang.org/appengine/datastore"
-	//	"google.golang.org/appengine/user"
 )
 
+//ID datastore object
 type ID struct {
 	Name    string
 	Seed    int
-	Counter uint64
+	Counter int64
 }
 
 func main() {
@@ -29,61 +23,78 @@ func main() {
 	appengine.Main()
 }
 func handle(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-	names := strings.Split(r.FormValue("name"), ",")
-	for i := 0; i < len(names); i++ {
-		name := names[i]
+
+	name := r.FormValue("name")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if len(name) > 0 {
+
+		rand.Seed(time.Now().UTC().UnixNano())
 		seed := rand.Intn(100)
-		result := record(ctx, name, seed)
-		fmt.Fprintf(w, "Hello, %d", result)
-	}
+		ctx := appengine.NewContext(r)
+		count, err := process(ctx, name, seed)
 
-	/*
-		name := "store"
-
-		e1 := ID{
-			Name:    name,
-			Seed:    seed,
-			Counter: 01,
+		if err != nil {
+			fmt.Fprintf(w, "error: %q", err.Error())
+		} else {
+			fmt.Fprintf(w, "%d", count)
 		}
-		fmt.Fprintf(w, "Hello, %d", e1.Seed)
-
-		/*
-			ctx: = appengine.NewContext(r)
-
-			key, err: = datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "employee", nil),  & e1)
-			if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-			}
-
-			var e2 Employee
-			if err = datastore.Get(ctx, key,  & e2); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-			}
-			fmt.Fprintf(w, "Stored and retrieved the Employee named %q", e2.Name) */
-	//	fmt.Fprintln(w, "Hello, world! from salesamount5.com")
+	} else {
+		fmt.Fprintf(w, "please add name parameter, like ?name=user")
+	}
 }
 
-func record(ctx context.Context, name string, seed int) uint64 {
+func process(ctx context.Context, name string, seed int) (int64, error) {
 
 	q := datastore.NewQuery("ID").
 		Filter("Name=", name).
 		Filter("Seed=", seed)
 
 	var ids []ID
-	if _, err := q.GetAll(ctx, &ids); err != nil {
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
+	keys, err2 := q.GetAll(ctx, &ids)
+	if err2 != nil {
+		return 0, err2
+	}
+	var key *datastore.Key
+	if len(ids) > 0 {
+		key = keys[0]
 	}
 
-	var counter uint64 = 0
-	if len(ids) > 0 {
-		id := ids[0]
-		counter = id.Counter + 1
-	} else {
+	var count int64
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		var err1 error
+		count, err1 = increment(ctx, key, name, seed)
+		return err1
+	}, nil)
+	return count, err
+}
 
+func increment(ctx context.Context, key *datastore.Key, name string, seed int) (int64, error) {
+
+	var counter int64
+	if key != nil {
+		var id ID
+		if err := datastore.Get(ctx, key, &id); err != nil && err != datastore.ErrNoSuchEntity {
+			return 0, err
+		}
+		id.Counter++
+		if id.Counter <= 0 {
+			id.Counter = 1
+		}
+		if _, err := datastore.Put(ctx, key, &id); err != nil {
+			return 0, err
+		}
+		counter = id.Counter
+	} else {
+		id := ID{
+			Name:    name,
+			Seed:    seed,
+			Counter: 1,
+		}
+		key := datastore.NewIncompleteKey(ctx, "ID", nil)
+		if _, err := datastore.Put(ctx, key, &id); err != nil {
+			return 0, err
+		}
 		counter = 1
 	}
-	return counter*100 + uint64(seed)
+	return counter*100 + int64(seed), nil
 }
