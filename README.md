@@ -10,7 +10,9 @@ git push -u origin master
 ## Development server
 
 dev_appserver.py app.yaml --go_debugging=true
+
 <http://localhost:8080>
+
 <http://localhost:8000>
 
 ## Deploy app
