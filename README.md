@@ -1,6 +1,6 @@
 # git
 
-git remote add origin https://github.com/irvinespectrum/stucco.git
+git remote add origin `https://github.com/irvinespectrum/stucco.git`
 
 git push -u origin master
 
