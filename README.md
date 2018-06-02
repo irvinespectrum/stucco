@@ -16,9 +16,11 @@ dev_appserver.py app.yaml --go_debugging=true
 
 <http://localhost:8000>
 
-## Deploy app
+## Deploy app & index
 
 gcloud app deploy
+
+gcloud datastore create-indexes
 
 ## view application in the web browser
 
@@ -29,8 +31,3 @@ gcloud app browse
 ## production
 
 <https://apc.salesamount.com>
-
-## vscode debug
-
-F5 "debug go file"
-<http://localhost:8080/>
