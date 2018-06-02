@@ -22,15 +22,10 @@ func TestHello(t *testing.T) {
 
 	m = make(map[int64]int64)
 
-	runtime.GOMAXPROCS(2)
-	wg.Add(3)
-	go A()
-	go A()
-	go A()
-
-	for i := 0; i < 25; i++ {
-		id := GetID()
-		fmt.Println(id)
+	runtime.GOMAXPROCS(1000)
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go A()
 	}
 
 	wg.Wait()
@@ -38,7 +33,7 @@ func TestHello(t *testing.T) {
 }
 
 func A() {
-	for i := 0; i < 25; i++ {
+	for i := 0; i < 1; i++ {
 		id := GetID()
 		fmt.Println(id)
 	}
@@ -46,7 +41,8 @@ func A() {
 }
 
 func GetID() int64 {
-	rs, err := http.Get("http://localhost:8080/?id=test")
+	//rs, err := http.Get("http://localhost:8080/?id=test")
+	rs, err := http.Get("https://apc.salesamount.com/?id=test")
 	if err != nil {
 		panic(err) // More idiomatic way would be to print the error and die unless it's a serious error
 	}
@@ -65,7 +61,7 @@ func GetID() int64 {
 func writeMap(i int64) {
 	lock.Lock()
 	defer lock.Unlock()
-	if m[i] != 0{
+	if m[i] != 0 {
 		panic("duplicate id")
 	}
 	m[i] = i

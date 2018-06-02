@@ -1,8 +1,0 @@
-indexes:
-  
-- kind: ID
-  properties:
-  - name: Name
-    direction: asc
-  - name: Seed
-    direction: asc

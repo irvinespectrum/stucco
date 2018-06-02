@@ -20,8 +20,6 @@ dev_appserver.py app.yaml --go_debugging=true
 
 gcloud app deploy
 
-gcloud datastore create-indexes
-
 ## view application in the web browser
 
 gcloud app browse
